@@ -59,6 +59,7 @@ enum
   SYNCH_NODES_RECORDING_COLUMN,
   SYNCH_NODES_OVERWRITE_PROXY_NAME_COLUMN,
   SYNCH_NODES_SAVE_CHANGES_COLUMN,
+  SYNCH_NODES_SAVE_TO_IMAGE,
   SYNCH_NODES_NUMBER_OF_COLUMNS // this must be the last line in this enum
 };
 
@@ -410,6 +411,7 @@ void qSlicerSequenceBrowserModuleWidget::setup()
   tableWidget_SynchronizedSequenceNodes_HeaderView->setResizeMode(SYNCH_NODES_RECORDING_COLUMN, QHeaderView::ResizeToContents);
   tableWidget_SynchronizedSequenceNodes_HeaderView->setResizeMode(SYNCH_NODES_OVERWRITE_PROXY_NAME_COLUMN, QHeaderView::ResizeToContents);
   tableWidget_SynchronizedSequenceNodes_HeaderView->setResizeMode(SYNCH_NODES_SAVE_CHANGES_COLUMN, QHeaderView::ResizeToContents);
+  tableWidget_SynchronizedSequenceNodes_HeaderView->setResizeMode(SYNCH_NODES_SAVE_TO_IMAGE, QHeaderView::ResizeToContents);
 #else
   tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_NAME_COLUMN, QHeaderView::Interactive);
   tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_PROXY_COLUMN, QHeaderView::Interactive);
@@ -417,6 +419,7 @@ void qSlicerSequenceBrowserModuleWidget::setup()
   tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_RECORDING_COLUMN, QHeaderView::ResizeToContents);
   tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_OVERWRITE_PROXY_NAME_COLUMN, QHeaderView::ResizeToContents);
   tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_SAVE_CHANGES_COLUMN, QHeaderView::ResizeToContents);
+  tableWidget_SynchronizedSequenceNodes_HeaderView-> setSectionResizeMode(SYNCH_NODES_SAVE_TO_IMAGE, QHeaderView::ResizeToContents);
 #endif
 
   tableWidget_SynchronizedSequenceNodes_HeaderView->setStretchLastSection(false);
@@ -807,6 +810,8 @@ void qSlicerSequenceBrowserModuleWidget::refreshSynchronizedSequenceNodesTable()
     disconnect(saveChangesCheckbox, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeSaveChangesStateChanged(int)));
     qMRMLNodeComboBox* proxyNodeComboBox = dynamic_cast<qMRMLNodeComboBox*>(d->tableWidget_SynchronizedSequenceNodes->cellWidget(row, SYNCH_NODES_PROXY_COLUMN));
     disconnect(proxyNodeComboBox, SIGNAL(currentNodeChanged(vtkMRMLNode*)), this, SLOT(onProxyNodeChanged(vtkMRMLNode*)));
+    QCheckBox* saveToImage = dynamic_cast<QCheckBox*>(d->tableWidget_SynchronizedSequenceNodes->cellWidget(row, SYNCH_NODES_SAVE_TO_IMAGE));
+    disconnect(saveToImage, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeSaveToImageStateChanged(int)));
   }
 
   if (d->ActiveBrowserNode==NULL)
@@ -874,6 +879,11 @@ void qSlicerSequenceBrowserModuleWidget::refreshSynchronizedSequenceNodesTable()
     recordingCheckbox->setToolTip(tr("Include this node in synchronized recording"));
     recordingCheckbox->setProperty("MRMLNodeID", QString(syncedNode->GetID()));
 
+    QCheckBox* saveToImage = new QCheckBox(d->tableWidget_SynchronizedSequenceNodes);
+    saveToImage->setToolTip(tr("Save sequences images into a folder"));
+    saveToImage->setProperty("MRMLNodeID", QString(syncedNode->GetID()));
+
+
     // Set previous checked state of the checkbox
     bool playbackChecked = d->ActiveBrowserNode->GetPlayback(syncedNode);
     playbackCheckbox->setChecked(playbackChecked);
@@ -887,15 +897,19 @@ void qSlicerSequenceBrowserModuleWidget::refreshSynchronizedSequenceNodesTable()
     bool recordingChecked = d->ActiveBrowserNode->GetRecording(syncedNode);
     recordingCheckbox->setChecked(recordingChecked);
 
+    // TODO!!!!
+
     connect(playbackCheckbox, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodePlaybackStateChanged(int)));
     connect(overwriteProxyNameCheckbox, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeOverwriteProxyNameStateChanged(int)));
     connect(saveChangesCheckbox, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeSaveChangesStateChanged(int)));
     connect(recordingCheckbox, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeRecordingStateChanged(int)));
+    connect(saveToImage, SIGNAL(stateChanged(int)), this, SLOT(synchronizedSequenceNodeSaveToImageStateChanged(int)));
 
     d->tableWidget_SynchronizedSequenceNodes->setCellWidget(i, SYNCH_NODES_PLAYBACK_COLUMN, playbackCheckbox);
     d->tableWidget_SynchronizedSequenceNodes->setCellWidget(i, SYNCH_NODES_RECORDING_COLUMN, recordingCheckbox);
     d->tableWidget_SynchronizedSequenceNodes->setCellWidget(i, SYNCH_NODES_OVERWRITE_PROXY_NAME_COLUMN, overwriteProxyNameCheckbox);
     d->tableWidget_SynchronizedSequenceNodes->setCellWidget(i, SYNCH_NODES_SAVE_CHANGES_COLUMN, saveChangesCheckbox);
+    d->tableWidget_SynchronizedSequenceNodes->setCellWidget(i, SYNCH_NODES_SAVE_TO_IMAGE, saveToImage);
 
     QTableWidgetItem* nameItem = new QTableWidgetItem( QString(syncedNode->GetName()) );
     d->tableWidget_SynchronizedSequenceNodes->setItem(i, SYNCH_NODES_NAME_COLUMN, nameItem);
@@ -1042,6 +1056,13 @@ void qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveChangesStat
   vtkMRMLSequenceNode* synchronizedNode = vtkMRMLSequenceNode::SafeDownCast( this->mrmlScene()->GetNodeByID(synchronizedNodeID) );
   d->ActiveBrowserNode->SetSaveChanges(synchronizedNode, aState);
 }
+
+//-----------------------------------------------------------------------------
+void qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveToImageStateChanged(int aState){
+    //TODO
+    return;
+}
+
 
 //-----------------------------------------------------------------------------
 void qSlicerSequenceBrowserModuleWidget::onProxyNodeChanged(vtkMRMLNode* newProxyNode)
