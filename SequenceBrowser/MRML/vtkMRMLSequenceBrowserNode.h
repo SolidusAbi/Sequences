@@ -276,18 +276,24 @@ public:
   /// However, if save changes enabled, proxy node changes are stored in the sequence, therefore users
   /// may accidentally change sequence node content by modifying proxy nodes.
   bool GetSaveChanges(vtkMRMLSequenceNode* sequenceNode);
+  /// Enable saving images sources data into a folder.
+  bool GetSaveToImage(vtkMRMLSequenceNode* sequenceNode);
 
   /// Set the synchrnization properties for the given sequence/proxy tuple
   void SetRecording(vtkMRMLSequenceNode* sequenceNode, bool recording);
   void SetPlayback(vtkMRMLSequenceNode* sequenceNode, bool playback);
   void SetOverwriteProxyName(vtkMRMLSequenceNode* sequenceNode, bool overwrite);
   void SetSaveChanges(vtkMRMLSequenceNode* sequenceNode, bool save);
+  void SetSaveToImage(vtkMRMLSequenceNode* sequenceNode, bool save);
 
   /// Process MRML node events for recording of the proxy nodes
   void ProcessMRMLEvents( vtkObject *caller, unsigned long event, void *callData ) override;
 
   /// Save state of all proxy nodes that recording is enabled for
   virtual void SaveProxyNodesState();
+
+  vtkSetMacro(SaveToImagesPath, std::string)
+  vtkGetMacro(SaveToImagesPath, std::string)
 
 protected:
   vtkMRMLSequenceBrowserNode();
@@ -320,6 +326,9 @@ protected:
   int RecordingSamplingMode;
   int IndexDisplayMode;
   int IndexDisplayDecimals;
+
+  // Directory with the path where the images will be saved
+  std::string SaveToImagesPath;
 
   // Unique postfixes for storing references to sequence nodes, proxy nodes, and properties
   // For example, a sequence node reference role name is SEQUENCE_NODE_REFERENCE_ROLE_BASE+synchronizationPostfix

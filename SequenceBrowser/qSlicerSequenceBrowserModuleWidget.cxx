@@ -18,6 +18,7 @@
 // Qt includes
 #include <QCheckBox>
 #include <QDebug>
+#include <QFileDialog>
 
 // SlicerQt includes
 #include "qMRMLSequenceBrowserToolBar.h"
@@ -1059,8 +1060,33 @@ void qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveChangesStat
 
 //-----------------------------------------------------------------------------
 void qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveToImageStateChanged(int aState){
-    //TODO
-    return;
+    Q_D(qSlicerSequenceBrowserModuleWidget);
+    if (d->ActiveBrowserNode==nullptr)
+    {
+      qCritical() << "qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveToImageStateChanged: Invalid activeBrowserNode";
+      return;
+    }
+
+    QCheckBox* senderCheckbox = dynamic_cast<QCheckBox*>(sender());
+    if (!senderCheckbox)
+    {
+      qCritical() << "qSlicerSequenceBrowserModuleWidget::synchronizedSequenceNodeSaveToImageStateChanged: Invalid sender checkbox";
+      return;
+    }
+
+    std::string synchronizedNodeID = senderCheckbox->property("MRMLNodeID").toString().toLatin1().constData();
+    vtkMRMLSequenceNode* synchronizedNode = vtkMRMLSequenceNode::SafeDownCast( this->mrmlScene()->GetNodeByID(synchronizedNodeID) );
+    if (strcmp(synchronizedNode->GetAttribute("Sequences.Source"), "Image"))
+        return;
+
+    std::string dir;
+    if (aState != 0)
+    {
+      dir = QFileDialog::getExistingDirectory(this, tr("Open Directory"), ".",
+                                              QFileDialog::ShowDirsOnly | QFileDialog::DontResolveSymlinks).toStdString();
+    }
+    d->ActiveBrowserNode->SetSaveToImagesPath(dir);
+    d->ActiveBrowserNode->SetSaveToImage(synchronizedNode, aState);
 }
 
 

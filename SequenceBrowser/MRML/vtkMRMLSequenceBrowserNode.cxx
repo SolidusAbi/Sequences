@@ -58,7 +58,8 @@ struct vtkMRMLSequenceBrowserNode::SynchronizationProperties
     Playback(true),
     Recording(false), // to only show recording controls if it's explicitly asked by the user
     OverwriteProxyName(false), // make sure proxy node names are not accidentally overwritten
-    SaveChanges(false) // to prevent accidental sequence node changes by default
+    SaveChanges(false), // to prevent accidental sequence node changes by default
+    SaveImagesToFile(false)
   {
   }
 
@@ -69,6 +70,7 @@ struct vtkMRMLSequenceBrowserNode::SynchronizationProperties
   bool Recording;
   bool OverwriteProxyName; // change proxy node name during replay (includes index value)
   bool SaveChanges; // save proxy node changes into the sequence
+  bool SaveImagesToFile; // save proxy node images into a folder
 };
 
 void vtkMRMLSequenceBrowserNode::SynchronizationProperties::FromString( std::string str )
@@ -109,6 +111,7 @@ std::string vtkMRMLSequenceBrowserNode::SynchronizationProperties::ToString()
   ss << "recording" << " " << (this->Recording ? "true" : "false") << " ";
   ss << "overwriteProxyName" << " " << (this->OverwriteProxyName ? "true" : "false") << " ";
   ss << "saveChanges" << " " << (this->SaveChanges ? "true" : "false") << " ";
+  ss << "saveImagesToFile" << " " << (this->SaveImagesToFile ? "true" : "false") << " ";
   return ss.str();
 }
 
@@ -1236,6 +1239,18 @@ bool vtkMRMLSequenceBrowserNode::GetSaveChanges(vtkMRMLSequenceNode* sequenceNod
 }
 
 //---------------------------------------------------------------------------
+bool vtkMRMLSequenceBrowserNode::GetSaveToImage(vtkMRMLSequenceNode *sequenceNode)
+{
+  std::string rolePostfix = this->GetSynchronizationPostfixFromSequence(sequenceNode);
+  SynchronizationProperties* syncProps = this->SynchronizationPropertiesMap[ rolePostfix ];
+  if (rolePostfix=="" || syncProps==nullptr)
+  {
+    return false;
+  }
+  return syncProps->SaveImagesToFile;
+}
+
+//---------------------------------------------------------------------------
 void vtkMRMLSequenceBrowserNode::SetRecording(vtkMRMLSequenceNode* sequenceNode, bool recording)
 {
   std::vector< vtkMRMLSequenceNode* > synchronizedSequenceNodes;
@@ -1365,6 +1380,40 @@ void vtkMRMLSequenceBrowserNode::SetSaveChanges(vtkMRMLSequenceNode* sequenceNod
   {
     this->Modified();
   }
+}
+
+//-----------------------------------------------------------
+void vtkMRMLSequenceBrowserNode::SetSaveToImage(vtkMRMLSequenceNode *sequenceNode, bool save)
+{
+    //Just work for Image source data
+    if (strcmp(sequenceNode->GetAttribute("Sequences.Source"), "Image"))
+        return;
+
+    std::vector< vtkMRMLSequenceNode* > synchronizedSequenceNodes;
+    if (sequenceNode)
+        synchronizedSequenceNodes.push_back(sequenceNode);
+    else
+        this->GetSynchronizedSequenceNodes(synchronizedSequenceNodes, true);
+
+    bool modified = false;
+    for (std::vector< vtkMRMLSequenceNode* >::iterator it = synchronizedSequenceNodes.begin(); it != synchronizedSequenceNodes.end(); ++it)
+    {
+      std::string rolePostfix = this->GetSynchronizationPostfixFromSequence(*it);
+      SynchronizationProperties* syncProps = this->SynchronizationPropertiesMap[rolePostfix];
+      if (rolePostfix == "" || syncProps == nullptr)
+      {
+        continue;
+      }
+      if (syncProps->SaveImagesToFile != save)
+      {
+        syncProps->SaveImagesToFile = save;
+        modified = true;
+      }
+    }
+    if (modified)
+    {
+      this->Modified();
+    }
 }
 
 //-----------------------------------------------------------

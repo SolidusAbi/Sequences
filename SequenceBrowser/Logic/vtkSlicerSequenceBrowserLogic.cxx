@@ -17,6 +17,10 @@
 
 //#define ENABLE_PERFORMANCE_PROFILING
 
+// Slicer includes
+#include "qSlicerCoreApplication.h"
+#include "qSlicerCoreIOManager.h"
+
 // Sequence Logic includes
 #include "vtkSlicerSequenceBrowserLogic.h"
 #include "vtkMRMLNodeSequencer.h"
@@ -40,6 +44,10 @@
 #include <vtkImageData.h>
 #include <vtkPolyData.h>
 #include <vtkAbstractTransform.h>
+
+// Qt includes
+#include <QString>
+#include <QDir>
 
 // STL includes
 #include <algorithm>
@@ -373,6 +381,26 @@ void vtkSlicerSequenceBrowserLogic::UpdateProxyNodesFromSequences(vtkMRMLSequenc
       if (storableNode)
       {
         storableNode->AddDefaultStorageNode();
+      }
+    }
+
+    /// TODO: Saving data into folder...
+    if (browserNode->GetSaveToImage(synchronizedSequenceNode))
+    {
+      QDir path = QDir(browserNode->GetSaveToImagesPath().c_str());
+      if (path.exists())
+      {
+        qSlicerCoreIOManager* coreIOManager = qSlicerCoreApplication::application()->coreIOManager();
+        qSlicerIO::IOProperties fileParameters;
+
+        std::string nodeName = synchronizedSequenceNode->GetName();
+        std::string unit = synchronizedSequenceNode->GetIndexUnit();
+
+        QString filename = path.filePath(QString((nodeName + "_" + indexValue + unit + ".png").c_str()));
+
+        fileParameters["nodeID"] = targetProxyNode->GetID();
+        fileParameters["fileName"] = filename.toStdString().c_str();
+        coreIOManager->saveNodes("VolumeFile", fileParameters);
       }
     }
   }
